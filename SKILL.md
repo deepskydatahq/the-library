@@ -12,7 +12,7 @@ A meta-skill for private-first distribution of agentics (skills, agents, and pro
 
 > Update these after forking and cloning the library repo.
 
-- **LIBRARY_REPO_URL**: `<your forked repo url>`
+- **LIBRARY_REPO_URL**: `git@github.com:deepskydatahq/the-library.git`
 - **LIBRARY_YAML_PATH**: `~/.claude/skills/library/library.yaml`
 - **LIBRARY_SKILL_DIR**: `~/.claude/skills/library/`
 
@@ -34,6 +34,18 @@ The Library is a catalog of references to your agentics. The `library.yaml` file
 | `/library list`             | Show full catalog with install status    |
 | `/library sync`             | Re-pull all installed items from source   |
 | `/library search <keyword>` | Find entries by keyword                  |
+
+## Agentic Types
+
+The library manages five types of agentics:
+
+| Type | Directory | Description |
+| ---- | --------- | ----------- |
+| **skill** | `.claude/skills/` | Capabilities — what an agent can do (testing patterns, crawler pipelines) |
+| **agent** | `.claude/agents/` | Autonomous agents with specialization and scale |
+| **prompt** | `.claude/commands/` | Orchestration commands that coordinate skills and agents |
+| **expert** | `.claude/experts/` | Specialized reviewers and advisors (product strategy, architecture) |
+| **hook** | `.claude/hooks/` | Lifecycle scripts triggered on session events (start, stop) |
 
 ## Cookbook
 
@@ -62,7 +74,7 @@ The `source` field in `library.yaml` supports these formats (auto-detected):
 
 Both GitHub URL formats are supported. Parse org, repo, branch, and file path from the URL structure. For private repos, use SSH or `GITHUB_TOKEN` for auth automatically.
 
-**Important:** The source points to a specific file (SKILL.md, AGENT.md, or prompt file). We always pull the entire parent directory, not just the file.
+**Important:** The source points to a specific file (SKILL.md, AGENT.md, expert .md, hook .sh, or prompt file). For skills, we pull the entire parent directory. For agents, experts, prompts, and hooks, we copy just the file.
 
 ## Source Parsing Rules
 
@@ -103,6 +115,8 @@ The `requires` field uses typed references to avoid ambiguity:
 - `skill:name` — references a skill in the library catalog
 - `agent:name` — references an agent in the library catalog
 - `prompt:name` — references a prompt in the library catalog
+- `expert:name` — references an expert in the library catalog
+- `hook:name` — references a hook in the library catalog
 
 When resolving dependencies: look up each reference in `library.yaml`, fetch all dependencies first (recursively), then fetch the requested item.
 
@@ -121,6 +135,12 @@ default_dirs:
     prompts:
         - default: .claude/commands/
         - global: ~/.claude/commands/
+    experts:
+        - default: .claude/experts/
+        - global: ~/.claude/experts/
+    hooks:
+        - default: .claude/hooks/
+        - global: ~/.claude/hooks/
 ```
 
 - If the user says "global" or "globally", use the `global` directory.
@@ -147,44 +167,59 @@ default_dirs:
     - default: .claude/agents/
     - global: ~/.claude/agents/
   prompts:
-    - default: .claude/prompts/
-    - global: ~/.claude/prompts/
+    - default: .claude/commands/
+    - global: ~/.claude/commands/
+  experts:
+    - default: .claude/experts/
+    - global: ~/.claude/experts/
+  hooks:
+    - default: .claude/hooks/
+    - global: ~/.claude/hooks/
 
 library:
   skills:
-    - name: firecrawl
-      description: Scrape, crawl, and search websites using Firecrawl CLI
-      source: /Users/me/projects/tools/skills/firecrawl/SKILL.md
+    - name: testing
+      description: Kent C. Dodds testing patterns with convex-test and RTL
+      source: https://github.com/deepskydatahq/the-library/blob/main/skills/testing.md
 
-    - name: meta-skill
-      description: Creates new Agent Skills following best practices
-      source: /Users/me/projects/tools/skills/meta-skill/SKILL.md
+    - name: test-crawler
+      description: Test website crawler pipeline - Firecrawl map, classification, content quality
+      source: https://github.com/deepskydatahq/the-library/blob/main/skills/test-crawler.md
 
-    - name: diagram-kroki
-      description: Generate diagrams via Kroki HTTP API supporting 28+ languages
-      source: https://github.com/myorg/private-skills/blob/main/skills/diagram-kroki/SKILL.md
-      requires: [skill:firecrawl]
-
-    - name: green-screen-captions
-      description: Generate and burn AI-powered captions onto green screen videos
-      source: https://raw.githubusercontent.com/myorg/video-tools/main/skills/green-screen-captions/SKILL.md
-      requires: [agent:video-processor, prompt:caption-style]
-
-  agents:
-    - name: video-processor
-      description: Processes video files with ffmpeg and whisper transcription
-      source: /Users/me/projects/tools/agents/video-processor/AGENT.md
-
-    - name: code-reviewer
-      description: Reviews code for quality, security, and performance
-      source: https://github.com/myorg/agent-configs/blob/main/agents/code-reviewer/AGENT.md
+  agents: []
 
   prompts:
-    - name: caption-style
-      description: Style guide for generating video captions
-      source: /Users/me/projects/content/prompts/caption-style.md
+    - name: execute-mission
+      description: Full autopilot from mission to PRs - breakdown, triage, parallel sub-agents
+      source: https://github.com/deepskydatahq/the-library/blob/main/commands/execute-mission.md
 
-    - name: commit-message
-      description: Standardized commit message format for all projects
-      source: https://github.com/myorg/team-prompts/blob/main/prompts/commit-message.md
+    - name: fix-pr-feedback
+      description: Fix automated PR review comments - classify, fix actionable, max 2 rounds
+      source: https://github.com/deepskydatahq/the-library/blob/main/commands/fix-pr-feedback.md
+
+    - name: retro
+      description: Post-implementation retrospective - discover issues, create Beads tasks
+      source: https://github.com/deepskydatahq/the-library/blob/main/commands/retro.md
+
+  experts:
+    - name: product-strategist
+      description: Product design advisor - user value, prioritization, jobs-to-be-done
+      source: https://github.com/deepskydatahq/the-library/blob/main/experts/product-strategist.md
+
+    - name: simplification-reviewer
+      description: Reviews designs for unnecessary complexity and bloat
+      source: https://github.com/deepskydatahq/the-library/blob/main/experts/simplification-reviewer.md
+
+    - name: technical-architect
+      description: Architecture advisor - patterns, API design, composability
+      source: https://github.com/deepskydatahq/the-library/blob/main/experts/technical-architect.md
+
+  hooks:
+    - name: huginn-bootstrap
+      description: SessionStart hook - loads project context from Huginn Memory
+      source: https://github.com/deepskydatahq/the-library/blob/main/hooks/huginn-bootstrap.sh
+
+    - name: huginn-save
+      description: Stop hook - persists session learnings to Huginn Memory
+      source: https://github.com/deepskydatahq/the-library/blob/main/hooks/huginn-save.sh
 ```

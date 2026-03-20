@@ -8,8 +8,56 @@ default_dirs:
   prompts:
     - default: .claude/commands/
     - global: ~/.claude/commands/
+  experts:
+    - default: .claude/experts/
+    - global: ~/.claude/experts/
+  hooks:
+    - default: .claude/hooks/
+    - global: ~/.claude/hooks/
 
 library:
-  skills: []
+  skills:
+    - name: test-crawler
+      description: Test website crawler pipeline - Firecrawl map, classification analysis, content quality
+      source: https://github.com/deepskydatahq/the-library/blob/main/skills/test-crawler.md
+
+    - name: testing
+      description: Kent C. Dodds testing patterns with convex-test and RTL - testing trophy, query priority
+      source: https://github.com/deepskydatahq/the-library/blob/main/skills/testing.md
+
   agents: []
-  prompts: []
+
+  prompts:
+    - name: execute-mission
+      description: Full autopilot from mission to PRs - breakdown, triage, parallel sub-agents, worktree isolation
+      source: https://github.com/deepskydatahq/the-library/blob/main/commands/execute-mission.md
+
+    - name: fix-pr-feedback
+      description: Fix automated PR review comments (Graptile, CodeRabbit) - classify, fix actionable, max 2 rounds
+      source: https://github.com/deepskydatahq/the-library/blob/main/commands/fix-pr-feedback.md
+
+    - name: retro
+      description: Post-implementation retrospective - analyze work, discover follow-up issues, create Beads tasks
+      source: https://github.com/deepskydatahq/the-library/blob/main/commands/retro.md
+
+  experts:
+    - name: product-strategist
+      description: Product design advisor - user value, prioritization, UX, friction reduction, jobs-to-be-done
+      source: https://github.com/deepskydatahq/the-library/blob/main/experts/product-strategist.md
+
+    - name: simplification-reviewer
+      description: Reviews designs for unnecessary complexity and bloat - focus, integration quality
+      source: https://github.com/deepskydatahq/the-library/blob/main/experts/simplification-reviewer.md
+
+    - name: technical-architect
+      description: Architecture advisor - patterns, API design, composability, simple mental models
+      source: https://github.com/deepskydatahq/the-library/blob/main/experts/technical-architect.md
+
+  hooks:
+    - name: huginn-bootstrap
+      description: SessionStart hook - loads project context from Huginn Memory on session start
+      source: https://github.com/deepskydatahq/the-library/blob/main/hooks/huginn-bootstrap.sh
+
+    - name: huginn-save
+      description: Stop hook - persists session learnings to Huginn Memory before exit
+      source: https://github.com/deepskydatahq/the-library/blob/main/hooks/huginn-save.sh

@@ -1,7 +1,7 @@
 # Add a New Entry to the Library
 
 ## Context
-Register a new skill, agent, or prompt in the library catalog.
+Register a new skill, agent, prompt, expert, or hook in the library catalog.
 
 ## Input
 The user provides: name, description, source, and optionally type and dependencies.
@@ -19,7 +19,9 @@ git pull
 Figure out the type from the user's prompt or the source path:
 - If the source path contains `SKILL.md` or user says "skill" → type is `skill`
 - If the source path contains `AGENT.md` or user says "agent" → type is `agent`
-- If user says "prompt" → type is `prompt`
+- If the source is in an `experts/` directory or user says "expert" → type is `expert`
+- If the source is in a `hooks/` directory or file is `.sh` or user says "hook" → type is `hook`
+- If user says "prompt" or source is in `commands/` → type is `prompt`
 - If ambiguous, ask the user
 
 ### 3. Validate the Source
@@ -38,7 +40,7 @@ Detect dependencies by looking through the skill/agent/prompt files, format them
 Read `library.yaml`, add the new entry under the correct section:
 
 ```yaml
-# Under library.skills, library.agents, or library.prompts
+# Under library.skills, library.agents, library.prompts, library.experts, or library.hooks
 - name: <name>
   description: <description>
   source: <source>
@@ -53,6 +55,8 @@ Read `library.yaml`, add the new entry under the correct section:
 - For skills reference the `.../<skill-name>/SKILL.md` file,
 - For agents reference the `.../<agent name>.md` file,
 - For prompts reference the `.../<prompt name>.md` file (installed to `.claude/commands/`),
+- For experts reference the `.../<expert name>.md` file (installed to `.claude/experts/`),
+- For hooks reference the `.../<hook name>.sh` file (installed to `.claude/hooks/`),
 - Remember we'll be adding a absolute path or a github url (https or ssh)
 
 ### 6. Commit and Push

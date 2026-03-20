@@ -17,7 +17,7 @@ git pull
 
 ### 2. Read the Catalog
 - Read `library.yaml`
-- Parse all entries from `library.skills`, `library.agents`, and `library.prompts`
+- Parse all entries from `library.skills`, `library.agents`, `library.prompts`, `library.experts`, and `library.hooks`
 
 ### 3. Search
 - Match the keyword (case-insensitive) against:

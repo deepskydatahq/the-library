@@ -14,7 +14,7 @@ git pull
 
 ### 2. Read the Catalog
 - Read `library.yaml`
-- Parse all entries from `library.skills`, `library.agents`, and `library.prompts`
+- Parse all entries from `library.skills`, `library.agents`, `library.prompts`, `library.experts`, and `library.hooks`
 
 ### 3. Find All Installed Items
 For each entry in the catalog:
@@ -42,6 +42,15 @@ For each installed entry, fetch the latest from its source:
 - For prompts: copy just the prompt file to the target:
   ```bash
   cp <prompt_file> <target_directory>/<prompt_name>.md
+  ```
+- For experts: copy just the expert file to the target:
+  ```bash
+  cp <expert_file> <target_directory>/<expert_name>.md
+  ```
+- For hooks: copy just the hook file to the target and preserve execute permissions:
+  ```bash
+  cp <hook_file> <target_directory>/<hook_name>.sh
+  chmod +x <target_directory>/<hook_name>.sh
   ```
 
 **If source is a GitHub URL**:

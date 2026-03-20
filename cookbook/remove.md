@@ -1,7 +1,7 @@
 # Remove an Entry from the Library
 
 ## Context
-The user wants to remove a skill, agent, or prompt from the library catalog and optionally delete the local copy.
+The user wants to remove a skill, agent, prompt, expert, or hook from the library catalog and optionally delete the local copy.
 
 ## Input
 The user provides a skill name or description.
@@ -27,7 +27,7 @@ Show the entry details and ask:
 - If installed locally, also ask: "Also delete the local copy at `<path>`?"
 
 ### 4. Remove from library.yaml
-- Remove the entry from the appropriate section (`library.skills`, `library.agents`, or `library.prompts`)
+- Remove the entry from the appropriate section (`library.skills`, `library.agents`, `library.prompts`, `library.experts`, or `library.hooks`)
 - If other entries depend on this one (via `requires`), warn the user before proceeding
 
 ### 5. Delete Local Copy (if requested)

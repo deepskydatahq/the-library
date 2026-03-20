@@ -1,7 +1,7 @@
 # Use a Skill from the Library
 
 ## Context
-Pull a skill, agent, or prompt from the catalog into the local environment. If already installed locally, overwrite with the latest from the source (refresh).
+Pull a skill, agent, prompt, expert, or hook from the catalog into the local environment. If already installed locally, overwrite with the latest from the source (refresh).
 
 ## Input
 The user provides a skill name or description.
@@ -17,7 +17,7 @@ git pull
 
 ### 2. Find the Entry
 - Read `library.yaml`
-- Search across `library.skills`, `library.agents`, and `library.prompts`
+- Search across `library.skills`, `library.agents`, `library.prompts`, `library.experts`, and `library.hooks`
 - Match by name (exact) or description (fuzzy/keyword match)
 - If multiple matches, show them and ask the user to pick one
 - If no match, tell the user and suggest `/library search`
@@ -54,7 +54,16 @@ If the entry has a `requires` field:
   ```bash
   cp <prompt_file> <target_directory>/<prompt_name>.md
   ```
-- If the agent or prompt is nested in a subdirectory under the `agents/` or `commands/` directories, copy the subdirectory to the target as well, creating the subdir if it doesn't exist. This is useful because it keeps the agents or commands grouped together.
+- For experts: copy just the expert file to the target:
+  ```bash
+  cp <expert_file> <target_directory>/<expert_name>.md
+  ```
+- For hooks: copy just the hook file to the target and preserve execute permissions:
+  ```bash
+  cp <hook_file> <target_directory>/<hook_name>.sh
+  chmod +x <target_directory>/<hook_name>.sh
+  ```
+- If the agent, prompt, or expert is nested in a subdirectory, copy the subdirectory to the target as well, creating the subdir if it doesn't exist. This is useful because it keeps items grouped together.
 
 **If source is a GitHub URL**:
 - Parse the URL to extract: `org`, `repo`, `branch`, `file_path`
@@ -83,7 +92,7 @@ If the entry has a `requires` field:
 
 ### 6. Verify Installation
 - Confirm the target directory exists
-- Confirm the main file (SKILL.md, AGENT.md, or prompt file) exists in it
+- Confirm the main file (SKILL.md, AGENT.md, expert .md, hook .sh, or prompt file) exists in it
 - Report success with the installed path
 
 ### 7. Confirm
