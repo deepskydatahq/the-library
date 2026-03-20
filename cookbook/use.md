@@ -4,9 +4,18 @@
 Pull a skill, agent, prompt, expert, or hook from the catalog into the local environment. If already installed locally, overwrite with the latest from the source (refresh).
 
 ## Input
-The user provides a skill name or description.
+The user provides a skill name, description, or `all` to install everything.
 
 ## Steps
+
+### 0. Check for "use all"
+If the user said `/library use all`:
+- Read `library.yaml` and collect every entry across all sections
+- If user said "globally", use the `global` directory for all items
+- For each entry, run steps 3–6 below (resolve deps, determine target, fetch, verify)
+- Group items from the same GitHub repo into a single clone to avoid redundant fetches
+- Show a summary table at the end with all installed items and their paths
+- Skip step 2 (no need to search — we're installing everything)
 
 ### 1. Sync the Library Repo
 Pull the latest catalog before reading:

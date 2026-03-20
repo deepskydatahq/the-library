@@ -29,6 +29,7 @@ The Library is a catalog of references to your agentics. The `library.yaml` file
 | `/library install`          | First-time setup: fork, clone, configure |
 | `/library add <details>`    | Register a new entry in the catalog      |
 | `/library use <name>`       | Pull from source (install or refresh)    |
+| `/library use all`          | Pull every item from catalog at once     |
 | `/library push <name>`      | Push local changes back to source        |
 | `/library remove <name>`    | Remove from catalog and optionally local |
 | `/library list`             | Show full catalog with install status    |
