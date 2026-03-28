@@ -1,6 +1,6 @@
 # Execute Mission
 
-Full autopilot from mission alignment to PRs. Breaks down the mission into epics and stories, triages each story, then launches parallel sub-agents to implement each epic in an isolated worktree. One PR per epic.
+Full autopilot from mission alignment to PRs. Breaks down the mission into epics and stories, triages each story, then launches parallel sub-agents to implement each epic in an isolated worktree. Independent evaluator agents verify each epic before PR creation. One PR per epic.
 
 ## Arguments
 
@@ -226,7 +226,7 @@ Launch one sub-agent per epic using the Agent tool with `isolation: "worktree"`.
 2. Find `launchable` = epics in `remaining` whose `depends_on` are all completed
 3. Launch all `launchable` epics in parallel (multiple Agent tool calls in ONE message)
 4. When results return:
-   - **Success:** move to `completed`, record PR URL
+   - **Success:** move to `completed`, record branch name and worktree path
    - **Failed:** move to `failed`, also mark any epics that depend on it as `cascade-failed`
 5. Repeat from step 2 until `remaining` is empty
 6. If `launchable` is empty but `remaining` is not — deadlock (all remaining depend on failures). Report and stop.
@@ -240,15 +240,11 @@ The prompt template (fill in the `{placeholders}` for each epic):
 ---
 
 ```
-You are implementing epic {epic_id} for the basesignal project.
+You are implementing epic {epic_id} for this project.
 
 ## Project Context
 
-- Monorepo with npm workspaces in packages/
-- Test: npm test (vitest, watch mode) or npm run test:run (CI, single run)
-- Build: npm run build
-- Every feature must have tests
-- Import from package names (@basesignal/core), not relative cross-package paths
+{Paste the relevant section from CLAUDE.md — build commands, test commands, project structure, conventions.}
 
 ## Mission: {mission_title}
 
@@ -300,7 +296,7 @@ For each story, in order:
 3. **Implement:**
    - Write the code changes
    - Write tests for each acceptance criterion
-   - Run tests: npm run test:run
+   - Run tests
    - Fix any test failures
    - Commit with a descriptive message: feat: {description}
 
@@ -311,32 +307,19 @@ For each story, in order:
 
 ## After All Stories
 
-1. Run the full test suite: npm run test:run
-2. Run the build: npm run build
+1. Run the full test suite
+2. Run the build (if applicable)
 3. Fix any issues
-4. Post epic completion to NFTOS (if `nftos` is available):
-   nftos "Epic {epic_id} done — {N}/{total} stories completed, shipping PR now" --type milestone
-5. Push and create a PR:
-   git push -u origin HEAD
-   gh pr create --title "feat({epic_id}): {epic_title}" --body "## Summary
-   {epic_outcome}
-
-   ## Stories Implemented
-   {list of story_ids and titles}
-
-   ## Test Results
-   All tests passing.
-
-   ---
-   Automated via /execute-mission"
+4. Push the branch: git push -u origin HEAD
+5. Do NOT create the PR — that happens after evaluation.
 
 ## Rules
 
 - Do NOT ask questions. Make autonomous decisions — pick the simpler option when unsure.
 - If you hit a blocker on one story, document it as a comment and move to the next.
 - Commit after each story — incremental commits, not one big commit.
-- All tests MUST pass before creating the PR.
-- If tests fail after all attempts, create the PR anyway but note failures in the PR body.
+- All tests MUST pass before pushing.
+- If tests fail after all attempts, push anyway but note failures in the output.
 
 ## Output
 
@@ -344,10 +327,171 @@ When complete, output exactly this block:
 
 EPIC_RESULT: {epic_id}
 STATUS: success | partial | failed
-PR_URL: {url or "none"}
+BRANCH: {branch name}
+WORKTREE: {worktree path}
 STORIES_COMPLETED: {comma-separated story_ids}
 STORIES_FAILED: {comma-separated story_ids with brief reasons, or "none"}
 TASKS_CLOSED: {comma-separated beads_task_ids}
+```
+
+---
+
+### Phase 2b: Evaluator Agents
+
+After each epic sub-agent completes successfully, launch an evaluator agent in the **same worktree**. The evaluator is a separate agent with a fresh context — it assesses the output without seeing the generator's reasoning.
+
+**Why a separate agent?** Self-evaluation is biased. Agents tend to praise their own work. An independent evaluator with only the contract and the code provides honest assessment.
+
+For each completed epic, launch an evaluator Agent with `subagent_type: "general-purpose"` (no worktree isolation — use the epic's existing worktree by setting the working directory).
+
+**Evaluator prompt template:**
+
+```
+You are an independent evaluator for epic {epic_id}.
+
+Your job is to verify whether the implementation meets the agreed testing criteria. You are NOT the author of this code — you are a skeptical reviewer. Do not assume anything works; verify it.
+
+## Project Context
+
+{Paste the relevant section from CLAUDE.md — build commands, test commands.}
+- Working directory: {worktree_path}
+
+## Testing Contract
+
+These criteria were agreed BEFORE implementation. Every criterion must pass.
+
+### Mission Criteria (from {mission_id})
+
+{Paste the full testing.criteria array from the mission TOML}
+
+### Epic Criteria (from {epic_id})
+
+{Paste the full testing.criteria array from the epic TOML}
+
+## Your Process
+
+1. **Run tests:**
+   {project test command}
+   Record: pass count, fail count, any failures.
+
+2. **Verify each criterion independently:**
+   For each criterion in the contract:
+   - Read the relevant code
+   - Check whether the criterion is actually met (not just whether a test exists)
+   - Look for edge cases the author might have missed
+   - Score: PASS or FAIL
+   - Write a specific finding (what you checked and what you found)
+
+3. **Check for regressions:**
+   - git diff main...HEAD --stat to see all changed files
+   - Verify no unrelated files were modified
+   - Check that existing functionality wasn't broken
+
+## Rules
+
+- Be skeptical. "Tests pass" does not mean criteria are met — tests might be weak.
+- Check the actual behavior, not just that code exists.
+- FAIL means the criterion is not met. Be specific about what's wrong.
+- PASS means you verified it works. Say what you checked.
+- Do NOT fix anything. You are an evaluator, not a fixer.
+- Do NOT add new requirements beyond the contract.
+
+## Output
+
+Output exactly this block:
+
+EVAL_RESULT: {epic_id}
+TESTS: {pass_count} passed, {fail_count} failed
+VERDICT: pass | fail
+
+CRITERIA:
+- [PASS] "{criterion text}" — {what you verified}
+- [FAIL] "{criterion text}" — {what's wrong and where}
+{...one line per criterion...}
+
+FINDINGS:
+{Any additional observations — regressions, code quality concerns, edge cases.
+Or "None" if everything looks good.}
+```
+
+**Processing evaluator results:**
+
+Parse the evaluator output. Extract the verdict and any FAIL criteria.
+
+**If VERDICT is "pass":** Post to NFTOS (if available) and create the PR:
+
+```bash
+nftos "Epic {epic_id} passed evaluation — all criteria met, creating PR" --type milestone
+```
+
+```bash
+cd {worktree_path}
+gh pr create --base main --title "feat({epic_id}): {epic_title}" --body "$(cat <<'EOF'
+## Summary
+{epic_outcome}
+
+## Stories Implemented
+{list of story_ids and titles}
+
+## Evaluation
+All {N} criteria passed.
+
+---
+Automated via /execute-mission
+EOF
+)"
+```
+
+**If VERDICT is "fail":** Launch a rework agent. Use the Agent tool with `subagent_type: "general-purpose"` (no worktree isolation — work in the same worktree).
+
+**Rework agent prompt:**
+
+```
+You are fixing issues found by an independent evaluator for epic {epic_id}.
+
+Working directory: {worktree_path}
+
+## Failed Criteria
+
+{Paste each FAIL line from the evaluator output}
+
+## Additional Findings
+
+{Paste the FINDINGS section}
+
+## Instructions
+
+1. For each failed criterion, read the finding and fix the issue.
+2. Run tests
+3. Commit fixes: git commit -m "fix: address evaluator findings for {epic_id}"
+4. Push: git push
+
+Do NOT ask questions. Fix the specific issues identified.
+
+Output: REWORK_DONE: {epic_id}
+```
+
+After the rework agent completes, run the evaluator again (same prompt). Max 2 rework rounds total.
+
+After 2 rounds, if still failing: create the PR anyway with unresolved findings in the body:
+
+```bash
+gh pr create --base main --title "feat({epic_id}): {epic_title}" --body "$(cat <<'EOF'
+## Summary
+{epic_outcome}
+
+## Stories Implemented
+{list}
+
+## Evaluation — Unresolved Findings
+{paste FAIL criteria that remain after 2 rework rounds}
+
+**Human review required for unresolved items.**
+
+---
+Automated via /execute-mission
+EOF
+)"
 ```
 
 ---
@@ -372,9 +516,25 @@ Launch all PR feedback agents in parallel (multiple Agent calls in one message, 
 
 ---
 
-### Phase 4: Report
+### Phase 4: TOML Commit
 
-#### 4.0 NFTOS: Mission Complete
+Commit the mission, epic, and story TOML files on a separate branch and create a PR:
+
+```bash
+git checkout -b bd/{mission_id}-tomls main
+git add product/missions/{mission_id}-*.toml product/epics/{mission_id}-*.toml product/stories/{mission_id}-*.toml
+git commit -m "bd: add {mission_id} mission, epic, and story TOMLs"
+git push -u origin HEAD
+gh pr create --base main --title "bd: {mission_id} mission, epic, and story TOMLs" --body "Product layer TOMLs for {mission_id}."
+```
+
+Do NOT merge — leave for human review alongside the epic PRs.
+
+---
+
+### Phase 5: Report
+
+#### 5.0 NFTOS: Mission Complete
 
 If nftos is available, post the mission result:
 
@@ -388,7 +548,7 @@ nftos "Mission {mission_id} complete — {N} epics, {N} stories, {N} PRs created
 nftos "Mission {mission_id} partial — {completed}/{total} epics shipped, {failed} need attention. {mission_title}" --type error
 ```
 
-#### 4.1 Report
+#### 5.1 Report
 
 Collect results from all agents and output:
 
@@ -397,21 +557,33 @@ Collect results from all agents and output:
 
 ### Epics
 
-| Epic | Status | PR | Stories |
-|------|--------|-----|---------|
-| E001 | success | #{pr} | 3/3 completed |
-| E002 | partial | #{pr} | 2/3 completed |
-| E003 | cascade-failed | — | blocked by E001 |
+| Epic | Status | Eval | PR | Stories |
+|------|--------|------|-----|---------|
+| E001 | success | pass (1st) | #{pr} | 3/3 completed |
+| E002 | partial | pass (2nd — 1 rework) | #{pr} | 2/3 completed |
+| E003 | cascade-failed | — | — | blocked by E001 |
 
-### PRs Created
+### Evaluation Summary
+- E001: 5/5 criteria passed on first evaluation
+- E002: 3/5 passed first eval → rework → 5/5 passed second eval
+- E003: not evaluated (blocked)
+
+### PRs for Review
 - #{pr}: feat(E001): {title} — {url}
 - #{pr}: feat(E002): {title} — {url}
+- #{pr}: bd: {mission_id} TOMLs — {url}
+
+**ACTION REQUIRED: Please review and merge these PRs.**
+For sequential epics, merge in order (E001 first, then E002, etc.).
 
 ### Tasks Closed
 {list of beads task IDs}
 
 ### Failures Requiring Attention
 {list of failed stories with reasons, or "None — all stories completed successfully."}
+
+### Unresolved Evaluation Findings
+{list of criteria that failed after 2 rework rounds, or "None — all criteria met."}
 
 ### PR Feedback
 - #{pr}: {N} issues fixed, {N} unresolved
@@ -420,6 +592,7 @@ Collect results from all agents and output:
 ### Summary
 - Epics: {completed}/{total} succeeded
 - Stories: {completed}/{total} implemented
-- PRs: {count} created
+- Evaluation: {pass_count}/{total} passed, {rework_count} required rework
+- PRs: {count} created (awaiting review)
 - Tasks: {count} closed
 ```
