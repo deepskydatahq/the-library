@@ -8,6 +8,16 @@ Full autopilot from mission alignment to PRs. Breaks down the mission into epics
 
 ## Instructions
 
+### Phase 0: NFTOS Setup
+
+Check if `nftos` is available:
+
+```bash
+which nftos 2>/dev/null
+```
+
+If available, NFTOS posting is enabled for this mission. You'll post at key milestones throughout execution. If not available, skip all `nftos` commands silently.
+
 ### Phase 1: Breakdown + Triage
 
 #### 1.1 Read the Mission
@@ -72,6 +82,14 @@ estimated_stories = 0
 ```
 
 Verify: all mission outcomes covered, no gaps, no overlaps, dependencies noted.
+
+#### 1.2.1 NFTOS: Mission Kickoff
+
+If nftos is available, post the mission kickoff:
+
+```bash
+nftos "Breaking down mission {mission_id} into {N} epics — {mission_title}" --type status
+```
 
 #### 1.3 Epics → Stories
 
@@ -296,7 +314,9 @@ For each story, in order:
 1. Run the full test suite: npm run test:run
 2. Run the build: npm run build
 3. Fix any issues
-4. Push and create a PR:
+4. Post epic completion to NFTOS (if `nftos` is available):
+   nftos "Epic {epic_id} done — {N}/{total} stories completed, shipping PR now" --type milestone
+5. Push and create a PR:
    git push -u origin HEAD
    gh pr create --title "feat({epic_id}): {epic_title}" --body "## Summary
    {epic_outcome}
@@ -353,6 +373,22 @@ Launch all PR feedback agents in parallel (multiple Agent calls in one message, 
 ---
 
 ### Phase 4: Report
+
+#### 4.0 NFTOS: Mission Complete
+
+If nftos is available, post the mission result:
+
+**If all epics succeeded:**
+```bash
+nftos "Mission {mission_id} complete — {N} epics, {N} stories, {N} PRs created. {mission_title}" --type milestone
+```
+
+**If some epics failed:**
+```bash
+nftos "Mission {mission_id} partial — {completed}/{total} epics shipped, {failed} need attention. {mission_title}" --type error
+```
+
+#### 4.1 Report
 
 Collect results from all agents and output:
 
