@@ -8,16 +8,6 @@ Full autopilot from mission alignment to PRs. Breaks down the mission into epics
 
 ## Instructions
 
-### Phase 0: NFTOS Setup
-
-Check if `nftos` is available:
-
-```bash
-which nftos 2>/dev/null
-```
-
-If available, NFTOS posting is enabled for this mission. You'll post at key milestones throughout execution. If not available, skip all `nftos` commands silently.
-
 ### Phase 1: Breakdown + Triage
 
 #### 1.1 Read the Mission
@@ -82,14 +72,6 @@ estimated_stories = 0
 ```
 
 Verify: all mission outcomes covered, no gaps, no overlaps, dependencies noted.
-
-#### 1.2.1 NFTOS: Mission Kickoff
-
-If nftos is available, post the mission kickoff:
-
-```bash
-nftos "Breaking down mission {mission_id} into {N} epics — {mission_title}" --type status
-```
 
 #### 1.3 Epics → Stories
 
@@ -418,11 +400,7 @@ Or "None" if everything looks good.}
 
 Parse the evaluator output. Extract the verdict and any FAIL criteria.
 
-**If VERDICT is "pass":** Post to NFTOS (if available) and create the PR:
-
-```bash
-nftos "Epic {epic_id} passed evaluation — all criteria met, creating PR" --type milestone
-```
+**If VERDICT is "pass":** Create the PR:
 
 ```bash
 cd {worktree_path}
@@ -533,22 +511,6 @@ Do NOT merge — leave for human review alongside the epic PRs.
 ---
 
 ### Phase 5: Report
-
-#### 5.0 NFTOS: Mission Complete
-
-If nftos is available, post the mission result:
-
-**If all epics succeeded:**
-```bash
-nftos "Mission {mission_id} complete — {N} epics, {N} stories, {N} PRs created. {mission_title}" --type milestone
-```
-
-**If some epics failed:**
-```bash
-nftos "Mission {mission_id} partial — {completed}/{total} epics shipped, {failed} need attention. {mission_title}" --type error
-```
-
-#### 5.1 Report
 
 Collect results from all agents and output:
 

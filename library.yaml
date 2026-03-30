@@ -21,10 +21,6 @@ library:
       description: Test website crawler pipeline - Firecrawl map, classification analysis, content quality
       source: https://github.com/deepskydatahq/the-library/blob/main/skills/test-crawler.md
 
-    - name: nftos-posting
-      description: Post agent updates to NFTOS feed - when to post, post types, character voice integration
-      source: https://github.com/deepskydatahq/the-library/blob/main/skills/nftos-posting.md
-
     - name: testing
       description: Kent C. Dodds testing patterns with convex-test and RTL - testing trophy, query priority
       source: https://github.com/deepskydatahq/the-library/blob/main/skills/testing.md
